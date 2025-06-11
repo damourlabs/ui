@@ -8,8 +8,8 @@
         <CardDescription>
           {{ description }}
         </CardDescription>
-        <CollapsibleTrigger>
-          <Button variant="ghost">
+        <CollapsibleTrigger data-allow-mismatch>
+          <Button variant="ghost" type="button">
             <ChevronUp v-if="isOpen" class="w-4 h-4" />
             <ChevronDown v-else class="w-4 h-4" />
             <span class="sr-only">Toggle</span>
@@ -34,6 +34,7 @@ import { ChevronDown, ChevronUp } from 'lucide-vue-next';
 import { DynamicFormField, type DynamicFormFieldProps } from '.';
 import type { RuleExpression } from 'vee-validate';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '~ui/components/ui/collapsible';
+import { Button } from '~ui/components/ui/button';
 
 
 const props = defineProps<DynamicFormFieldProps<RuleExpression<unknown>>>();

@@ -12,7 +12,7 @@
           {{ description }}
         </CardDescription>
         <CollapsibleTrigger>
-          <Button variant="ghost">
+          <Button variant="ghost" type="button">
             <ChevronUp v-if="isOpen" class="w-4 h-4" />
             <ChevronDown v-else class="w-4 h-4" />
             <span class="sr-only">Toggle</span>
@@ -40,12 +40,7 @@
           <template v-if="resourceStore && finding">
             <ResourceFinder
               v-model="findingValue"
-              :label="opts.label"
-              :storeKey="resourceStore"
-              :display-field="props.displayField || 'name'"
-              :sub-text-field="props.subTextField"
-              :search-fields="props.searchFields || ['name', 'title']"
-              :allow-clear="true"
+              v-bind="props"
             />
           </template>
           <template v-if="fields.length === 0">
