@@ -61,11 +61,11 @@ const defaultOpen = useCookie<boolean>("sidebar_state");
             </Breadcrumb>
           </div>
         </header>
-        <div class="flex flex-col flex-1 gap-4 pt-0 h-full min-h-screen">
+        <div class="flex flex-col flex-1 gap-4 pt-0 h-full min-h-svh">
           <slot />
         </div>
         <!-- Footer -->
-         <Footer v-bind="footerConfig"/>
+        <Footer v-bind="footerConfig"/>
 
       </SidebarInset>
     </SidebarProvider>
