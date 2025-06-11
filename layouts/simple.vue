@@ -1,19 +1,16 @@
 <script setup lang="ts">
 
 import SideBar, { type NavigationSidebarProps } from "~ui/components/nav/SideBar.vue"
+import Footer, { type FooterProps } from "~ui/components/nav/Footer.vue"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~ui/components/ui/breadcrumb';
-import { useNavigation } from '~ui/composables/useNavigation';
 
-const props = defineProps<NavigationSidebarProps>();
+interface LayoutProps {
+  footerConfig: FooterProps;
+}
 
-// Update the navigation configuration with the provided props
-onMounted(() => {
-  const { updateNavigationConfig } = useNavigation();
-  updateNavigationConfig(props);
-});
+defineProps<LayoutProps>();
 
-const { navigationConfig, updateNavigationConfig } = useNavigation();
-provide('updateNavigationConfig', updateNavigationConfig);
+const { navigationConfig } = useNavigation();
 
 
 const route = useRoute();
@@ -67,6 +64,9 @@ const defaultOpen = useCookie<boolean>("sidebar_state");
         <div class="flex flex-col flex-1 gap-4 p-4 pt-0">
           <slot />
         </div>
+        <!-- Footer -->
+         <Footer v-bind="footerConfig"/>
+
       </SidebarInset>
     </SidebarProvider>
 
