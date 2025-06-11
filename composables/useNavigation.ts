@@ -2,6 +2,7 @@ import type { NavigationSidebarProps } from "~ui/components/nav/SideBar.vue";
 
 export const useNavigation = () => {
   const navigationConfig = useState<NavigationSidebarProps>('navigation-config', () => ({
+    hasBreadcrumbs: false,
     side: 'left',
     variant: 'sidebar',
     collapsible: 'offcanvas',
@@ -13,7 +14,7 @@ export const useNavigation = () => {
       name: '',
       email: '',
       avatar: ''
-    }
+    },
   }))
 
   function updateNavigationConfig(newConfig: NavigationSidebarProps) {

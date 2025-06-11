@@ -7,6 +7,7 @@ import User from '../nav/User.vue';
 import TopLevel from '../nav/TopLevel.vue';
 
 export type NavigationSidebarProps = SidebarProps & {
+  hasBreadcrumbs?: boolean;
   mainMenuUrl: string;
   items: Array<NavigationSidebarItem>;
   links: {
