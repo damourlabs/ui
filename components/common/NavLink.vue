@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import type { NuxtLinkProps } from '#app';
+import type { NuxtLinkProps } from 'nuxt/app';
 import { Button } from '~ui/components/ui/button';
 interface NavLinkProps extends NuxtLinkProps {
   isActive?: boolean;
