@@ -2,7 +2,7 @@
   "name": "@damourlabs-portfolio/ui",
   "type": "module",
   "private": true,
-  "version": "0.24.2",
+  "version": "0.24.3",
   "main": "./nuxt.config.ts",
   "scripts": {
     "dev": "nuxi dev .playground",
