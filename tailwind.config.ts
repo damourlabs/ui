@@ -1,3 +1,4 @@
+import type { Config } from 'tailwindcss'
 
 export default {
   content: [
@@ -6,7 +7,7 @@ export default {
     './pages/**/*.vue',
     "./content/**/*",
   ],
-   theme: {
+  theme: {
     container: {
       center: true,
       padding: '2rem',
@@ -86,4 +87,4 @@ export default {
       // },
     },
   },
-}
+} satisfies Config
