@@ -1,5 +1,15 @@
 # Changelog
 
+## Latest
+
+### 🐛 Bug Fixes
+
+- fetch resources on component mount to ensure data is loaded for the finder &nbsp;-&nbsp; [<samp>(3f30551)</samp>](https://github.com/damourChris/damourlabs-portfolio/commit/3f30551)
+
+### ♻️ Refactoring
+
+- add useFooter() composable to handle footer state &nbsp;-&nbsp; [<samp>(7f0e47d)</samp>](https://github.com/damourChris/damourlabs-portfolio/commit/7f0e47d)
+
 ## 0.24.2
 
 ### 🐛 Bug Fixes
