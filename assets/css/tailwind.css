@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @config "../../tailwind.config.js";
-@source '../../node_modules/shadcn-docs-nuxt';
 
 @custom-variant dark (&:is(.dark *));
 
