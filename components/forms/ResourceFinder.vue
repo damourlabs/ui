@@ -170,6 +170,7 @@ const { fetchAll, fetchById } = store;
 
   // Lifecycle
   onMounted(async () => {
+    await fetchAll()
     if(store === undefined) {
       throw createError(`Resource store "${props.resourceStore}" not found. Ensure it is provided in the parent component.`)
     }
