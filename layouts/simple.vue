@@ -3,14 +3,10 @@
 import SideBar, { type NavigationSidebarProps } from "~ui/components/nav/SideBar.vue"
 import Footer, { type FooterProps } from "~ui/components/nav/Footer.vue"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~ui/components/ui/breadcrumb';
-
-interface LayoutProps {
-  footerConfig: FooterProps;
-}
-
-defineProps<LayoutProps>();
+import { useFooter } from "../composables/useFooter";
 
 const { navigationConfig } = useNavigation();
+const { footerConfig } = useFooter();
 
 
 const route = useRoute();
