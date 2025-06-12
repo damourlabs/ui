@@ -118,6 +118,10 @@ const { fetchAll, fetchById } = store;
   }, { immediate: true })
 
   const filteredResources = computed(() => {
+    if (items.value === undefined) {
+      console.warn(`Resource store "${props.resourceStore}" not found. Ensure it is provided in the parent component.`)
+      return []
+    }
     if (!searchQuery.value) return items.value
 
     const query = searchQuery.value.toLowerCase()
@@ -166,8 +170,11 @@ const { fetchAll, fetchById } = store;
 
   // Lifecycle
   onMounted(async () => {
+    if(store === undefined) {
+      throw createError(`Resource store "${props.resourceStore}" not found. Ensure it is provided in the parent component.`)
+    }
     // Fetch resources if not already loaded
-    if (!items.value.length && !loading.value) {
+    if (items.value !== undefined && !items.value.length && !loading.value) {
       await fetchAll()
     }
   })
