@@ -1,7 +1,7 @@
-import { createResolver } from '@nuxt/kit'
-import tailwindcss from '@tailwindcss/vite'
-const { resolve } = createResolver(import.meta.url)
 
+import tailwindcss from '@tailwindcss/vite'
+
+import { fileURLToPath } from 'node:url'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     "shadcn-nuxt",
     "nuxt-charts"
   ],
-  alias: { '~ui': resolve('./') },
+  alias: { '~ui': fileURLToPath(new URL('.', import.meta.url)) },
   css: ['~ui/assets/css/tailwind.css'],
   components: [
     { path: '~ui/components', prefix: 'Ui' },
