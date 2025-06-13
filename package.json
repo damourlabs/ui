@@ -10,6 +10,7 @@
     "build": "nuxt build .playground",
     "generate": "nuxt generate .playground",
     "preview": "nuxt preview .playground",
+    "postinstall": "nuxt prepare .playground",
     "release": "release-it --ci",
     "lint": "eslint ."
   },
