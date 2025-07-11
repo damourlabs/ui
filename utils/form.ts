@@ -61,9 +61,12 @@ type CreateDynamicFormOptions = {
 
 function _createDynamicForm(
   schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>,
-  options: CreateDynamicFormOptions = {}
+  options: CreateDynamicFormOptions = {
+    resourceFields: [],
+    fieldsToIgnore: []
+  }
 ): FormSchema<z.ZodType<unknown, z.ZodTypeDef, unknown>> {
-  const { resourceFields = [], fieldsToIgnore = [] } = options;
+  const { resourceFields, fieldsToIgnore } = options;
   const fields: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>[] = [];
   const initialValues: Record<string, unknown> = {};
 
