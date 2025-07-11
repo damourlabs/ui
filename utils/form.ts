@@ -56,7 +56,8 @@ const applyTypeSchemaToRules = (object: DynamicFormFieldProps<z.ZodType<unknown,
 // Create a dyanmica for schema based on a Zod schema
 function _createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>,
 
-  resourceFields: string[] = []
+  resourceFields: string[] = [],
+  fields_to_ignore: string[] = []
 ): FormSchema<z.ZodType<unknown, z.ZodTypeDef, unknown>> {
   const fields: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>[] = [];
   const initialValues: Record<string, unknown> = {};
@@ -64,7 +65,10 @@ function _createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysPara
   // Iterate over the schema properties
   for (const key in schema.shape) {
 
-
+    // Skip fields that are in the ignore list
+    if (fields_to_ignore.includes(key)) {
+      continue;
+    }
 
     let fieldSchema = schema.shape[key];
 
