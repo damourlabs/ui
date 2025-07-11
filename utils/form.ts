@@ -54,52 +54,52 @@ const applyTypeSchemaToRules = (object: DynamicFormFieldProps<z.ZodType<unknown,
 }
 
 // Create a dyanmica for schema based on a Zod schema
-function _createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>,
+type CreateDynamicFormOptions = {
+  resourceFields?: string[];
+  fieldsToIgnore?: string[];
+};
 
-  resourceFields: string[] = [],
-  fields_to_ignore: string[] = []
+function _createDynamicForm(
+  schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>,
+  options: CreateDynamicFormOptions = {}
 ): FormSchema<z.ZodType<unknown, z.ZodTypeDef, unknown>> {
+  const { resourceFields = [], fieldsToIgnore = [] } = options;
   const fields: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>[] = [];
   const initialValues: Record<string, unknown> = {};
 
-  // Iterate over the schema properties
   for (const key in schema.shape) {
-
-    // Skip fields that are in the ignore list
-    if (fields_to_ignore.includes(key)) {
-      continue;
-    }
+    if (fieldsToIgnore.includes(key)) continue;
 
     let fieldSchema = schema.shape[key];
 
-    // If the field is a lzazy schema, we can resolve it
     if (fieldSchema instanceof z.ZodLazy) {
       fieldSchema = fieldSchema._def.getter();
-
     }
 
-
-
     const field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>> = {
-      as: 'input', // Default to input, can be customized based on field type
-      description: fieldSchema.description ?? '', // Add a description if needed
-      // Assume that the key is in camelCase and we want to convert it to a more user-friendly label into Camel Case
+      as: 'input',
+      description: fieldSchema.description ?? '',
       opts: {
         label: key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^\w/, c => c.toUpperCase()),
-        validateOnValueUpdate: true, // Validate on value update
-        validateOnMount: false, // Validate on mount
+        validateOnValueUpdate: true,
+        validateOnMount: false,
       },
       name: key,
-      label: key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^\w/, c => c.toUpperCase()), // Convert camelCase to Camel Case for the label
+      label: key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^\w/, c => c.toUpperCase()),
       subfields: [],
-      displayField: 'id', // Default display field is the key itself
+      displayField: 'id',
       rules: fieldSchema,
-      inputType: 'text', // Default type, can be customized based on field type
+      inputType: 'text',
     };
 
-
     if (fieldSchema instanceof z.ZodEffects) {
-      fieldSchema = fieldSchema.innerType()
+      fieldSchema = fieldSchema.innerType();
+    }
+
+    if (fieldSchema instanceof z.ZodDefault) {
+      initialValues[key] = fieldSchema._def.defaultValue();
+      fieldSchema = fieldSchema._def.innerType;
+    } else {
     }
 
     // Get the default value for the field if it exists and the field has no children
@@ -119,7 +119,7 @@ function _createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysPara
       // If the field is an object, we can use the inner schema for the object properties
       field.as = 'object'; // Change the field type to object
 
-      const fieldObject = _createDynamicForm(fieldSchema, resourceFields); // Recursively create fields for the object properties
+      const fieldObject = _createDynamicForm(fieldSchema, options); // Recursively create fields for the object properties
       field.subfields = fieldObject.sections; // Set the children to the created fields
       initialValues[key] = fieldObject.initialValues; // Set the initial value for the object
     }
@@ -145,7 +145,7 @@ function _createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysPara
         resolveFieldSchema = resolveFieldSchema._def.getter();
 
       }
-      field.subfields = _createDynamicForm(resolveFieldSchema, resourceFields).sections; // Recursively create fields for the array items
+      field.subfields = _createDynamicForm(resolveFieldSchema, options).sections; // Recursively create fields for the array items
 
       // For the empty value field, we need to find what are the default values of all the fields in the resolveFieldSchema
       field.emptyValue = {};
@@ -200,7 +200,7 @@ function _createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysPara
         resolveFieldSchema = resolveFieldSchema._def.getter();
 
       }
-      field.subfields = _createDynamicForm(resolveFieldSchema, resourceFields).sections; // Recursively create fields for the record values
+      field.subfields = _createDynamicForm(resolveFieldSchema, options).sections; // Recursively create fields for the record values
 
       // For the empty value field, we need to find what are the default values of all the fields in the resolveFieldSchema
       field.emptyValue = {};
@@ -320,9 +320,11 @@ function _createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysPara
 }
 
 
-export function createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>, resourceFields: string[] = []): FormSchema<RuleExpression<unknown>> {
+export function createDynamicForm(schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>,
+  options: CreateDynamicFormOptions = {}
+): FormSchema<RuleExpression<unknown>> {
   // Create a dynamic form based on the Zod schema
-  const dynamicForm = _createDynamicForm(schema, resourceFields);
+  const dynamicForm = _createDynamicForm(schema, options);
   // Apply the type schema to the rules
   return {
     ...dynamicForm,
