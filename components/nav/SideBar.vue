@@ -5,6 +5,7 @@ import Main from '../nav/Main.vue';
 import Links from '../nav/Links.vue';
 import User from '../nav/User.vue';
 import TopLevel from '../nav/TopLevel.vue';
+import QuickSettings from './QuickSettings.vue';
 
 export type NavigationSidebarProps = SidebarProps & {
   hasBreadcrumbs?: boolean;
@@ -56,6 +57,7 @@ const props = withDefaults(defineProps<NavigationSidebarProps>(), {
       <Links :links="links" />
     </SidebarContent>
     <SidebarFooter>
+        <QuickSettings/>
       <User :user="user" />
     </SidebarFooter>
     <SidebarRail />
