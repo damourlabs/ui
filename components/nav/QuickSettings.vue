@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { useSidebar } from '../ui/sidebar';
+import DarkModeToggleSwitch from '../common/DarkModeToggleSwitch.vue'
 const { isMobile } = useSidebar()
 </script>
 
@@ -18,6 +19,7 @@ const { isMobile } = useSidebar()
         </PopoverTrigger>
         <PopoverContent class="rounded-lg w-[--reka-dropdown-menu-trigger-width] min-w-56"
         :side="isMobile ? 'bottom' : 'right'" align="end" :side-offset="4">
+          <DarkModeToggleSwitch />
         </PopoverContent>
       </Popover>
     </SidebarMenuItem>
