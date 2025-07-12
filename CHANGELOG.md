@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.25.0
+
+### &nbsp;&nbsp;&nbsp;Features
+
+- **components/common**: Add DarkModeToggleSwitch component and integrate color mode functionality &nbsp;-&nbsp; by **Christopher** [<samp>(ade09)</samp>](https://github.com/damourlabs/ui/commit/ade0963)
+- **components/nav**: Add QuickSettings component to SidebarFooter &nbsp;-&nbsp; by **Christopher** [<samp>(92a44)</samp>](https://github.com/damourlabs/ui/commit/92a442b)
+- **components/table**: Add basic data table using @tanstack/vue-table &nbsp;-&nbsp; by **Christopher** [<samp>(10729)</samp>](https://github.com/damourlabs/ui/commit/107296d)
+- **utils/form**: Add fields_to_ignore parameter to _createDynamicForm function &nbsp;-&nbsp; by **Christopher** [<samp>(3ba1a)</samp>](https://github.com/damourlabs/ui/commit/3ba1ae9)
+
+### &nbsp;&nbsp;&nbsp;Bug Fixes
+
+- **app**: Remove unused source import from tailwind.css &nbsp;-&nbsp; by **Christopher** [<samp>(d6d90)</samp>](https://github.com/damourlabs/ui/commit/d6d90d0)
+- **package**: Add postinstall script to prepare Nuxt environment &nbsp;-&nbsp; by **Christopher** [<samp>(126ae)</samp>](https://github.com/damourlabs/ui/commit/126ae24)
+- **ui/deps**: Remove deprecated @nuxtjs/tailwindcss dependency &nbsp;-&nbsp; by **Christopher** [<samp>(1fd0b)</samp>](https://github.com/damourlabs/ui/commit/1fd0be9)
+- **utils/form**: Ensure default options are set for _createDynamicForm function &nbsp;-&nbsp; by **Christopher** [<samp>(16d64)</samp>](https://github.com/damourlabs/ui/commit/16d6483)
+
+##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.24.3...0.25.0)
+
 ## Latest
 
 ### 🐛 Bug Fixes
@@ -96,4 +114,3 @@
 ### 🔧 Chores
 
 - remove duplicate class "grid" &nbsp;-&nbsp; [<samp>(d0a47d3)</samp>](https://github.com/damourChris/damourlabs-portfolio/commit/d0a47d3)
-
