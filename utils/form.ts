@@ -79,6 +79,36 @@ function _createDynamicForm(
       fieldSchema = fieldSchema._def.getter();
     }
 
+
+    if (fieldSchema instanceof z.ZodEffects) {
+      fieldSchema = fieldSchema.innerType();
+    }
+
+    if (fieldSchema instanceof z.ZodNullable) {
+      // If the field is nullable, we can unwrap it to get the inner schema
+      fieldSchema = fieldSchema.unwrap();
+    }
+
+
+
+    // Get the default value for the field if it exists and the field has no children
+    if (fieldSchema instanceof z.ZodDefault) {
+      // If the field has a default value, we can use it as the initial value
+      initialValues[key] = fieldSchema._def.defaultValue();
+
+      // Unwrap the schema to get the inner schema
+      fieldSchema = fieldSchema._def.innerType;
+    } else {
+      // If the field does not have a default value, we can set the initial value to an empty object
+      initialValues[key] = undefined;
+    }
+
+    // Figure out what type of field to create based on the schema
+    if (fieldSchema instanceof z.ZodOptional) {
+      // If the field is optional, we can just use the inner schema
+      fieldSchema = fieldSchema.unwrap();
+    }
+
     const field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>> = {
       as: 'input',
       description: fieldSchema.description ?? '',
@@ -95,27 +125,8 @@ function _createDynamicForm(
       inputType: 'text',
     };
 
-    if (fieldSchema instanceof z.ZodEffects) {
-      fieldSchema = fieldSchema.innerType();
-    }
 
-    if (fieldSchema instanceof z.ZodDefault) {
-      initialValues[key] = fieldSchema._def.defaultValue();
-      fieldSchema = fieldSchema._def.innerType;
-    } else {
-    }
 
-    // Get the default value for the field if it exists and the field has no children
-    if (fieldSchema instanceof z.ZodDefault) {
-      // If the field has a default value, we can use it as the initial value
-      initialValues[key] = fieldSchema._def.defaultValue();
-
-      // Unwrap the schema to get the inner schema
-      fieldSchema = fieldSchema._def.innerType;
-    } else {
-      // If the field does not have a default value, we can set the initial value to an empty object
-      initialValues[key] = undefined;
-    }
 
     // Handle nested objects
     if (fieldSchema instanceof z.ZodObject) {
@@ -127,11 +138,6 @@ function _createDynamicForm(
       initialValues[key] = fieldObject.initialValues; // Set the initial value for the object
     }
 
-    // Figure out what type of field to create based on the schema
-    if (fieldSchema instanceof z.ZodOptional || fieldSchema instanceof z.ZodNullable) {
-      // If the field is optional, we can just use the inner schema
-      fieldSchema = fieldSchema.unwrap();
-    }
 
 
 
