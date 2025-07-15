@@ -71,7 +71,7 @@ function _createDynamicForm(
   const initialValues: Record<string, unknown> = {};
 
   for (const key in schema.shape) {
-    if (fieldsToIgnore.includes(key)) continue;
+    if (fieldsToIgnore?.includes(key)) continue;
 
     let fieldSchema = schema.shape[key];
 
