@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.26.1
+
+### &nbsp;&nbsp;&nbsp;Bug Fixes
+
+- **composables/useFooter**: Initialize footerConfig with default credits and links &nbsp;-&nbsp; by **Christopher** [<samp>(0e4e4)</samp>](https://github.com/damourlabs/ui/commit/0e4e490)
+- **forms/DynamicForm**: Update form handling to use consistent form object and improve state management &nbsp;-&nbsp; by **Christopher** [<samp>(3067e)</samp>](https://github.com/damourlabs/ui/commit/3067eae)
+
+##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.26.0...0.26.1)
+
 ## 0.26.0
 
 ### &nbsp;&nbsp;&nbsp;Features
@@ -13,7 +22,7 @@
   - Handle optional fieldsToIgnore in _createDynamicForm function &nbsp;-&nbsp; by **Christopher** [<samp>(0619a)</samp>](https://github.com/damourlabs/ui/commit/0619a08)
   - Remove duplicate code and ensure all unwraping happens before the field definition and in correct order &nbsp;-&nbsp; by **Christopher** [<samp>(a57dd)</samp>](https://github.com/damourlabs/ui/commit/a57dd75)
 
-##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.25.0...0.25.1)
+##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.25.0...0.26.0)
 
 ## 0.25.0
 
