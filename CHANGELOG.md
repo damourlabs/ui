@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.26.0
+
+### &nbsp;&nbsp;&nbsp;Features
+
+- **components/nav**: Integrate DarkModeToggleSwitch into QuickSettings component &nbsp;-&nbsp; by **Christopher** [<samp>(60895)</samp>](https://github.com/damourlabs/ui/commit/60895ed)
+- **utils/form**: Add unwrapSchemaWithMetadata function to enhance schema processing and metadata extraction &nbsp;-&nbsp; by **Christopher** [<samp>(f28fc)</samp>](https://github.com/damourlabs/ui/commit/f28fcda)
+
+### &nbsp;&nbsp;&nbsp;Bug Fixes
+
+- **utils/form**:
+  - Handle optional fieldsToIgnore in _createDynamicForm function &nbsp;-&nbsp; by **Christopher** [<samp>(0619a)</samp>](https://github.com/damourlabs/ui/commit/0619a08)
+  - Remove duplicate code and ensure all unwraping happens before the field definition and in correct order &nbsp;-&nbsp; by **Christopher** [<samp>(a57dd)</samp>](https://github.com/damourlabs/ui/commit/a57dd75)
+
+##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.25.0...0.25.1)
+
 ## 0.25.0
 
 ### &nbsp;&nbsp;&nbsp;Features
