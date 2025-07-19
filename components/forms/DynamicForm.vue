@@ -111,7 +111,7 @@
       </CardHeader>
       <CardContent class="space-y-6">
         <pre class="bg-gray-100 p-4 rounded-md">
-      {{ JSON.stringify(formValues, null, 2) }}
+      {{ JSON.stringify(form.values, null, 2) }}
     </pre>
       </CardContent>
     </Card>
@@ -128,10 +128,10 @@ import { FolderIcon, FolderOpenIcon, OctagonAlertIcon } from 'lucide-vue-next'
 import { useSessionStorage } from '@vueuse/core';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~ui/components/ui/tabs';
 
-const { schema, onSubmit, sections } = defineProps<{
+const { schema, submitFn, sections } = defineProps<{
   schema: FormSchema<RuleExpression<unknown>>,
   sections?: boolean,
-  onSubmit: (values: Record<string, unknown>) => void;
+  submitFn: (values: Record<string, unknown>) => void;
 }>();
 
 const isSectionned = computed(() => {
@@ -139,7 +139,7 @@ const isSectionned = computed(() => {
 });
 
 
-const { handleSubmit, errors, values: formValues, handleReset } = useForm({
+const form = useForm({
   validationSchema: schema.schema,
   initialValues: schema.initialValues,
   validateOnMount: false,
@@ -148,8 +148,8 @@ const { handleSubmit, errors, values: formValues, handleReset } = useForm({
 
 });
 
-const onFormSubmit = handleSubmit(onSubmit);
-const onFormReset = handleReset;
+const onFormSubmit = form.handleSubmit(submitFn);
+const onFormReset = form.handleReset;
 
 
 // const formRef = useTemplateRef<FormContext>('formRef');
@@ -171,7 +171,7 @@ const draftStorage = useSessionStorage<unknown>('draft-form-data', formData.valu
 });
 
 
-watch(formValues, (newValues) => {
+watch(form.values, (newValues) => {
   // Update the formData state whenever formValues change
   formData.value.values = newValues;
 }, { deep: true });
@@ -181,7 +181,7 @@ watch(formValues, (newValues) => {
 const saveDraft = () => {
   lastSaved.value.setTime(Date.now());
   // Use session storage to save the form data
-  draftStorage.value = formValues.value;
+  draftStorage.value = form.values.value;
 
 }
 
@@ -220,7 +220,7 @@ const isCurrentTab = (sectionName: string) => {
 
 
 const hasSectionErrors = (sectionName: string) => {
-  return Object.keys(errors.value).some((key) => key.startsWith(sectionName));
+  return Object.keys(form.errors.value).some((key) => key.startsWith(sectionName));
 };
 
 
