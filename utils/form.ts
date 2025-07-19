@@ -59,6 +59,70 @@ type CreateDynamicFormOptions = {
   fieldsToIgnore?: string[];
 };
 
+// Type to hold metadata about wrapper schemas
+type SchemaWrapperInfo = {
+  isNullable: boolean;
+  isOptional: boolean;
+  hasDefault: boolean;
+  defaultValue?: unknown;
+  isLazy: boolean;
+  hasEffects: boolean;
+};
+
+// Helper function to recursively unwrap schema and collect wrapper information
+function unwrapSchemaWithMetadata(
+  schema: z.ZodType<any, any, any>
+): { coreSchema: z.ZodType<any, any, any>; metadata: SchemaWrapperInfo } {
+  const metadata: SchemaWrapperInfo = {
+    isNullable: false,
+    isOptional: false,
+    hasDefault: false,
+    isLazy: false,
+    hasEffects: false,
+  };
+
+  let currentSchema = schema;
+
+  // Keep unwrapping until we reach the core schema
+  while (true) {
+    if (currentSchema instanceof z.ZodLazy) {
+      metadata.isLazy = true;
+      currentSchema = currentSchema._def.getter();
+      continue;
+    }
+
+    if (currentSchema instanceof z.ZodEffects) {
+      metadata.hasEffects = true;
+      currentSchema = currentSchema.innerType();
+      continue;
+    }
+
+    if (currentSchema instanceof z.ZodNullable) {
+      metadata.isNullable = true;
+      currentSchema = currentSchema.unwrap();
+      continue;
+    }
+
+    if (currentSchema instanceof z.ZodDefault) {
+      metadata.hasDefault = true;
+      metadata.defaultValue = currentSchema._def.defaultValue();
+      currentSchema = currentSchema._def.innerType;
+      continue;
+    }
+
+    if (currentSchema instanceof z.ZodOptional) {
+      metadata.isOptional = true;
+      currentSchema = currentSchema.unwrap();
+      continue;
+    }
+
+    // No more wrappers found, break out of loop
+    break;
+  }
+
+  return { coreSchema: currentSchema, metadata };
+}
+
 function _createDynamicForm(
   schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>,
   options: CreateDynamicFormOptions = {
@@ -66,48 +130,34 @@ function _createDynamicForm(
     fieldsToIgnore: []
   }
 ): FormSchema<z.ZodType<unknown, z.ZodTypeDef, unknown>> {
-  const { resourceFields, fieldsToIgnore } = options;
+  const { resourceFields = [], fieldsToIgnore = [] } = options;
   const fields: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>[] = [];
   const initialValues: Record<string, unknown> = {};
 
   for (const key in schema.shape) {
     if (fieldsToIgnore?.includes(key)) continue;
 
-    let fieldSchema = schema.shape[key];
+    const originalFieldSchema = schema.shape[key];
+    const { coreSchema: fieldSchema, metadata } = unwrapSchemaWithMetadata(originalFieldSchema);
 
-    if (fieldSchema instanceof z.ZodLazy) {
-      fieldSchema = fieldSchema._def.getter();
+    // Handle initial values based on metadata
+    let initialValue: unknown = undefined;
+
+    if (metadata.hasDefault) {
+      initialValue = metadata.defaultValue;
     }
 
+    // Check for conflicting wrapper types and warn
+    const conflictingWrappers: string[] = [];
+    if (metadata.hasDefault && metadata.isNullable) conflictingWrappers.push('default + nullable');
+    if (metadata.hasDefault && metadata.isOptional) conflictingWrappers.push('default + optional');
 
-    if (fieldSchema instanceof z.ZodEffects) {
-      fieldSchema = fieldSchema.innerType();
+    if (conflictingWrappers.length > 0) {
+      console.warn(`Field "${key}" has conflicting wrapper types: ${conflictingWrappers.join(', ')}. Setting initial value to null.`);
+      initialValue = null;
     }
 
-    if (fieldSchema instanceof z.ZodNullable) {
-      // If the field is nullable, we can unwrap it to get the inner schema
-      fieldSchema = fieldSchema.unwrap();
-    }
-
-
-
-    // Get the default value for the field if it exists and the field has no children
-    if (fieldSchema instanceof z.ZodDefault) {
-      // If the field has a default value, we can use it as the initial value
-      initialValues[key] = fieldSchema._def.defaultValue();
-
-      // Unwrap the schema to get the inner schema
-      fieldSchema = fieldSchema._def.innerType;
-    } else {
-      // If the field does not have a default value, we can set the initial value to an empty object
-      initialValues[key] = undefined;
-    }
-
-    // Figure out what type of field to create based on the schema
-    if (fieldSchema instanceof z.ZodOptional) {
-      // If the field is optional, we can just use the inner schema
-      fieldSchema = fieldSchema.unwrap();
-    }
+    initialValues[key] = initialValue;
 
     const field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>> = {
       as: 'input',
@@ -148,38 +198,34 @@ function _createDynamicForm(
     if (fieldSchema instanceof z.ZodArray) {
       // If the field is an array, we can use the inner schema for the array items
       field.as = 'array'; // Change the field type to array
-      //
-      let resolveFieldSchema = fieldSchema.element;
-      if (fieldSchema.element instanceof z.ZodLazy) {
-        resolveFieldSchema = resolveFieldSchema._def.getter();
 
-      }
-      field.subfields = _createDynamicForm(resolveFieldSchema, options).sections; // Recursively create fields for the array items
+      // Use our new unwrapping function for the array element
+      const { coreSchema: resolveFieldSchema } = unwrapSchemaWithMetadata(fieldSchema.element);
 
-      // For the empty value field, we need to find what are the default values of all the fields in the resolveFieldSchema
-      field.emptyValue = {};
+      // Only process as nested fields if the core schema is a ZodObject
+      if (resolveFieldSchema instanceof z.ZodObject) {
+        field.subfields = _createDynamicForm(resolveFieldSchema, options).sections; // Recursively create fields for the array items
 
-      for (const itemKey in resolveFieldSchema.shape) {
-        let itemFieldSchema = resolveFieldSchema.shape[itemKey];
-        // If the item field is a lazy schema, we can resolve it
+        // For the empty value field, we need to find what are the default values of all the fields in the resolveFieldSchema
+        field.emptyValue = {};
 
-        if (itemFieldSchema instanceof z.ZodLazy) {
-          itemFieldSchema = itemFieldSchema._def.getter()
+        for (const itemKey in resolveFieldSchema.shape) {
+          const { metadata: itemMetadata } = unwrapSchemaWithMetadata(resolveFieldSchema.shape[itemKey]);
 
-          if (itemFieldSchema instanceof z.ZodDefault) {
-            field.emptyValue[itemKey] = itemFieldSchema._def.defaultValue();
+          if (itemMetadata.hasDefault) {
+            field.emptyValue[itemKey] = itemMetadata.defaultValue;
+          } else {
+            field.emptyValue[itemKey] = undefined; // Default to undefined if no default value is available
           }
-        } else if (itemFieldSchema instanceof z.ZodDefault) {
-          field.emptyValue[itemKey] = itemFieldSchema._def.defaultValue();
-        } else {
-          field.emptyValue[itemKey] = undefined; // Default to undefined if no default value is available
         }
+      } else {
+        // For non-object array elements, set empty subfields and emptyValue
+        field.subfields = [];
+        field.emptyValue = undefined;
       }
 
       // Set the label to be without the final 's'
       field.opts.label = field.opts.label.endsWith('s') ? field.opts.label.slice(0, -1) : field.opts.label; // Remove the final 's' from the label
-
-
 
       // Get the resource store key from the key since we assume that the key is in the form '[resource]Id'
       const resourceStoreKey = key.replace(/s$/, ''); // Remove the 'Id' suffix and add 's' to get the store key
@@ -190,11 +236,9 @@ function _createDynamicForm(
         field.displayField = 'name'; // Default display field is the name
         console.log('Resource store key is in the resourceFields array:', field.resourceStore);
       } else {
-
         // initialValues[key] = crypto.randomUUID(); // Generate a random UUID as the initial value
         // field.as = 'generate-uuid'; // Change the field type to generate-uuid
       }
-
 
       // console.log('Field schema for array:', fieldSchema);
     }
@@ -203,38 +247,31 @@ function _createDynamicForm(
     if (fieldSchema instanceof z.ZodRecord) {
       // If the field is a record, we can use the inner schema for the record values
       field.as = 'record'; // Change the field type to record
-      //
-      let resolveFieldSchema = fieldSchema.valueSchema;
-      if (resolveFieldSchema instanceof z.ZodLazy) {
-        resolveFieldSchema = resolveFieldSchema._def.getter();
 
-      }
-      field.subfields = _createDynamicForm(resolveFieldSchema, options).sections; // Recursively create fields for the record values
+      // Use our new unwrapping function for the record value schema
+      const { coreSchema: resolveFieldSchema } = unwrapSchemaWithMetadata(fieldSchema.valueSchema);
 
-      // For the empty value field, we need to find what are the default values of all the fields in the resolveFieldSchema
-      field.emptyValue = {};
-
+      // Only process as nested fields if the core schema is a ZodObject
       if (resolveFieldSchema instanceof z.ZodObject) {
+        field.subfields = _createDynamicForm(resolveFieldSchema, options).sections; // Recursively create fields for the record values
+
+        // For the empty value field, we need to find what are the default values of all the fields in the resolveFieldSchema
+        field.emptyValue = {};
+
         for (const itemKey in resolveFieldSchema.shape) {
-          let itemFieldSchema = resolveFieldSchema.shape[itemKey];
-          // If the item field is a lazy schema, we can resolve it
+          const { metadata: itemMetadata } = unwrapSchemaWithMetadata(resolveFieldSchema.shape[itemKey]);
 
-          if (itemFieldSchema instanceof z.ZodLazy) {
-            itemFieldSchema = itemFieldSchema._def.getter()
-
-            if (itemFieldSchema instanceof z.ZodDefault) {
-              field.emptyValue[itemKey] = itemFieldSchema._def.defaultValue();
-            }
-          } else if (itemFieldSchema instanceof z.ZodDefault) {
-            field.emptyValue[itemKey] = itemFieldSchema._def.defaultValue();
+          if (itemMetadata.hasDefault) {
+            field.emptyValue[itemKey] = itemMetadata.defaultValue;
           } else {
             field.emptyValue[itemKey] = undefined; // Default to undefined if no default value is available
           }
         }
       } else {
+        // For non-object record values, set empty subfields and emptyValue
+        field.subfields = [];
         field.emptyValue = undefined; // Default to undefined if no default value is available
       }
-
     }
 
     // --- Deal with enums ---
