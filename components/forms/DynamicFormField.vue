@@ -111,6 +111,12 @@
         </template> -->
 
     <!-- Handle date type -->
+    <template v-else-if="isAsOfType(as, 'date')">
+      <FormControl>
+        <Input v-model="dateValue" :type="inputType" />
+      </FormControl>
+    </template>
+
     <template v-else-if="isAsOfType(as, 'calendar-date')">
       <DynamicFormFieldDate v-bind="props"/>
     </template>
@@ -164,6 +170,31 @@
 
   const selectOptions = computed(() => {
     return props.selectOptions?.filter(child => isAsOfType(child.tag, 'select-option')) || [];
+  });
+
+  // Computed property for date inputs that converts between string and Date
+  const dateValue = computed({
+    get: () => {
+      if (isAsOfType(props.as, 'date') && value.value) {
+        // Convert string value to Date object for display
+        if (typeof value.value === 'string') {
+          return value.value;
+        } else if (value.value instanceof Date) {
+          // Convert Date to YYYY-MM-DD format for input
+          return value.value.toISOString().split('T')[0];
+        }
+      }
+      return value.value;
+    },
+    set: (newValue: string) => {
+      if (isAsOfType(props.as, 'date') && newValue) {
+        // Convert string input to Date object
+        const dateObj = new Date(newValue + 'T00:00:00.000Z'); // Ensure UTC to avoid timezone issues
+        setValue(dateObj);
+      } else {
+        setValue(newValue || null);
+      }
+    }
   });
 
 
