@@ -127,7 +127,7 @@ function _createDynamicForm(
   schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>,
   options: CreateDynamicFormOptions = {
     resourceFields: [],
-    fieldsToIgnore: []
+    fieldsToIgnore: [],
   }
 ): FormSchema<z.ZodType<unknown, z.ZodTypeDef, unknown>> {
   const { resourceFields = [], fieldsToIgnore = [] } = options;
@@ -296,8 +296,9 @@ function _createDynamicForm(
       field.inputType = 'url';
     }
     if (fieldSchema instanceof z.ZodString && fieldSchema.isDate) {
-      // If the field is a string and is a date, we can set the type to date
-      field.inputType = 'date';
+      // If the field is a string and is a date, we can set the type to calendar-date
+      field.as = 'calendar-date'; // Change the field type to calendar-date
+      field.inputType = 'calendar-date'; // Set the type to calendar-date
     }
     if (fieldSchema instanceof z.ZodString && fieldSchema.isUUID) {
       // If the field is a string and is a date, we can set the type to date
@@ -343,11 +344,6 @@ function _createDynamicForm(
       field.inputType = 'date'; // Set the type to date
     }
 
-    // This is a bit hacky but we assume that each date field has "date" in its key
-    if (key.toLowerCase().includes('date') && !isAsOfType(field.as, 'calendar-date')) {
-      field.as = 'calendar-date'; // Change the field type to date
-      field.inputType = 'calendar-date'; // Set the type to date
-    }
 
 
 
