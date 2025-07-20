@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.26.2
+
+### &nbsp;&nbsp;&nbsp;Bug Fixes
+
+- **forms/DynamicFormField**: Add date input handling with computed dateValue for proper string-Date conversion &nbsp;-&nbsp; by **Christopher** [<samp>(d5227)</samp>](https://github.com/damourlabs/ui/commit/d5227a0)
+- **utils/form**: Update dynamic form handling for date fields to use 'calendar-date' type &nbsp;-&nbsp; by **Christopher** [<samp>(ad8e5)</samp>](https://github.com/damourlabs/ui/commit/ad8e57e)
+
+##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.26.1...0.26.2)
+
 ## 0.26.1
 
 ### &nbsp;&nbsp;&nbsp;Bug Fixes
