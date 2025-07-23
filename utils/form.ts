@@ -159,7 +159,13 @@ function _createDynamicForm(
 
     initialValues[key] = initialValue;
 
-    if (fieldsToIgnore?.includes(key)) continue;
+    if (fieldsToIgnore?.includes(key)) {
+      if (initialValue === undefined) {
+        console.warn(`Field "${key}" is ignored but has no initial value set. Setting to null.`);
+        initialValues[key] = null; // Set to null if no initial value is set
+      }
+      continue; // Skip this field if it is in the ignore list
+    };
 
     const field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>> = {
       as: 'input',
