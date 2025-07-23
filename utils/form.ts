@@ -135,7 +135,7 @@ function _createDynamicForm(
   const initialValues: Record<string, unknown> = {};
 
   for (const key in schema.shape) {
-    if (fieldsToIgnore?.includes(key)) continue;
+
 
     const originalFieldSchema = schema.shape[key];
     const { coreSchema: fieldSchema, metadata } = unwrapSchemaWithMetadata(originalFieldSchema);
@@ -158,6 +158,8 @@ function _createDynamicForm(
     }
 
     initialValues[key] = initialValue;
+
+    if (fieldsToIgnore?.includes(key)) continue;
 
     const field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>> = {
       as: 'input',
