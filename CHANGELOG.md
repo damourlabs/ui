@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.26.3
+
+### &nbsp;&nbsp;&nbsp;Bug Fixes
+
+- **tils/form**: Add check and warning for unset ignore fields &nbsp;-&nbsp; by **Christopher** [<samp>(54b29)</samp>](https://github.com/damourlabs/ui/commit/54b2950)
+- **utils/form**: Move ignorefiled check continue after settiing inital value &nbsp;-&nbsp; by **Christopher** [<samp>(6825d)</samp>](https://github.com/damourlabs/ui/commit/6825d02)
+
+##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.26.2...0.26.3)
+
 ## 0.26.2
 
 ### &nbsp;&nbsp;&nbsp;Bug Fixes
