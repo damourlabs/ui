@@ -157,6 +157,12 @@ function _createDynamicForm(
       initialValue = null;
     }
 
+    // Special handle case for the "uuid" or "id" field of the object
+    // Since its (should) never be shown to to the user, we can set it to a random UUID
+    if (key === 'id' || key === 'uuid') {
+      initialValue = crypto.randomUUID(); // Generate a random UUID as the initial value
+    }
+
     initialValues[key] = initialValue;
 
     if (fieldsToIgnore?.includes(key)) {
