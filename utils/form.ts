@@ -53,9 +53,14 @@ const applyTypeSchemaToRules = (object: DynamicFormFieldProps<z.ZodType<unknown,
   return typedObject
 }
 
-// Create a dyanmica for schema based on a Zod schema
+type ResourceFieldIndicator = {
+  field: string;
+  store: string;
+};
+
+// Create a dynamic form schema based on a Zod schema
 type CreateDynamicFormOptions = {
-  resourceFields?: string[];
+  resourceFields?: ResourceFieldIndicator[];
   fieldsToIgnore?: string[];
 };
 
@@ -138,6 +143,10 @@ function _createDynamicForm(
 
 
     const originalFieldSchema = schema.shape[key];
+    if (!originalFieldSchema) {
+      console.warn(`Field "${key}" has no schema defined. Skipping.`);
+      continue; // Skip fields without a schema
+    }
     const { coreSchema: fieldSchema, metadata } = unwrapSchemaWithMetadata(originalFieldSchema);
 
     // Handle initial values based on metadata
@@ -244,13 +253,16 @@ function _createDynamicForm(
       // Get the resource store key from the key since we assume that the key is in the form '[resource]Id'
       const resourceStoreKey = key.replace(/s$/, ''); // Remove the 'Id' suffix and add 's' to get the store key
 
-      console.log('Resource store key from array:', resourceStoreKey);
-      if (resourceFields.includes(resourceStoreKey)) {
-        field.resourceStore = resourceStoreKey + 'sStore';
-        field.displayField = 'name'; // Default display field is the name
-        console.log('Resource store key is in the resourceFields array:', field.resourceStore);
+      // Check if any items in the resource field arrays obj match the resourceStoreKey
+      const resourceField = resourceFields.find((item) => item.field === resourceStoreKey);
+      if (resourceField) {
+        console.log('Resource store key is in the resourceFields array:', resourceStoreKey);
+
+        field.as = 'resource-finder';
+        field.resourceStore = resourceField.store; // Set the resource store key
       } else {
-        // initialValues[key] = crypto.randomUUID(); // Generate a random UUID as the initial value
+
+        initialValues[key] = crypto.randomUUID(); // Generate a random UUID as the initial value
         // field.as = 'generate-uuid'; // Change the field type to generate-uuid
       }
 
@@ -322,11 +334,13 @@ function _createDynamicForm(
       const resourceStoreKey = key.replace(/Id$/, ''); // Remove the 'Id' suffix and add 's' to get the store key
 
 
-      if (resourceFields.includes(resourceStoreKey)) {
+      // Check if any items in the resource field arrays obj match the resourceStoreKey
+      const resourceField = resourceFields.find((item) => item.field === resourceStoreKey);
+      if (resourceField) {
         console.log('Resource store key is in the resourceFields array:', resourceStoreKey);
 
         field.as = 'resource-finder';
-        field.resourceStore = resourceStoreKey + 'sStore';
+        field.resourceStore = resourceField.store; // Set the resource store key
       } else {
 
         initialValues[key] = crypto.randomUUID(); // Generate a random UUID as the initial value
