@@ -23,7 +23,7 @@
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem v-for="resource in filteredResources" :key="resource.id"
+        <DropdownMenuItem v-for="resource in filteredResources" :key="getId(resource)"
           class="flex justify-between items-center hover:bg-accent p-2 text-sm hover:text-accent-foreground cursor-pointer"
           @click="selectResource(resource)">
           <div class="flex flex-col">
@@ -32,7 +32,7 @@
               {{ getSubText(resource) }}
             </span>
           </div>
-          <Check v-if="modelValue === resource.id" class="ml-2 w-4 h-4" />
+          <Check v-if="modelValue === getId(resource)" class="ml-2 w-4 h-4" />
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem v-if="modelValue && allowClear" @click="clearSelection">
@@ -151,9 +151,13 @@ const { fetchAll, fetchById } = store;
     return getNestedValue(resource, props.subTextField) || ''
   }
 
+  const getId = (resource: Entity): string | number => {
+    return resource.id || resource._id || resource.uuid || 'Unknown ID'
+  }
+
   // Event handlers
   const selectResource = (resource: Entity) => {
-    emit('update:modelValue', resource.id)
+    emit('update:modelValue', getId(resource))
     isOpen.value = false
     searchQuery.value = ''
   }
