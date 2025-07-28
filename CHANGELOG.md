@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.26.4
+
+### &nbsp;&nbsp;&nbsp;Bug Fixes
+
+- **utils/form**:
+  - Add special case handling for id or uuid initial value &nbsp;-&nbsp; by **Christopher** [<samp>(95628)</samp>](https://github.com/damourlabs/ui/commit/9562852)
+  - Enhance resource field handling and add warning for undefined schemas &nbsp;-&nbsp; by **Christopher** [<samp>(082e5)</samp>](https://github.com/damourlabs/ui/commit/082e5a3)
+  - Add optional displayField to ResourceFieldIndicator and set default in dynamic form creation &nbsp;-&nbsp; by **Christopher** [<samp>(8bd29)</samp>](https://github.com/damourlabs/ui/commit/8bd2919)
+
+##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.26.3...0.26.4)
+
 ## 0.26.3
 
 ### &nbsp;&nbsp;&nbsp;Bug Fixes
