@@ -177,11 +177,12 @@ function _createDynamicForm(
 
     if (fieldsToIgnore?.includes(key)) {
       // If initialValues has a value for this key, we remove it
-      if (Object.prototype.hasOwnProperty.call(initialValues, key)) {
+      if (initialValues[key] === null || initialValues[key] === undefined) {
         // Remove the key from initialValues if it is in the ignore list
         console.warn(`Removing initial value for ignored field "${key}".`);
         delete initialValues[key];
       }
+
       console.warn(`Field "${key}" is in the ignore list. Skipping.`);
       continue; // Skip this field if it is in the ignore list
     };
