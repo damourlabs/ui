@@ -56,6 +56,7 @@ const applyTypeSchemaToRules = (object: DynamicFormFieldProps<z.ZodType<unknown,
 type ResourceFieldIndicator = {
   field: string;
   store: string;
+  displayField?: string; // Optional display field for resource finder
 };
 
 // Create a dynamic form schema based on a Zod schema
@@ -260,6 +261,7 @@ function _createDynamicForm(
 
         field.as = 'resource-finder';
         field.resourceStore = resourceField.store; // Set the resource store key
+        field.displayField = resourceField.displayField || "id"
       } else {
 
         initialValues[key] = crypto.randomUUID(); // Generate a random UUID as the initial value
