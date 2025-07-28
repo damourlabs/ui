@@ -343,6 +343,7 @@ function _createDynamicForm(
 
         field.as = 'resource-finder';
         field.resourceStore = resourceField.store; // Set the resource store key
+        field.displayField = resourceField.displayField || "id"
       } else {
 
         initialValues[key] = crypto.randomUUID(); // Generate a random UUID as the initial value
