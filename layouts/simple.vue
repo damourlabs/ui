@@ -3,19 +3,11 @@
 import SideBar, { type NavigationSidebarProps } from "~ui/components/nav/SideBar.vue"
 import Footer, { type FooterProps } from "~ui/components/nav/Footer.vue"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~ui/components/ui/breadcrumb';
-import { useFooter } from "../composables/useFooter";
 
 const { navigationConfig } = useNavigation();
 const { footerConfig } = useFooter();
 
-
 const route = useRoute();
-watch(() => route.path, () => {
-  // Logic to update sidebar based on the current route
-  // For example, you might want to fetch new sidebar items based on the route
-  // dashboardSidebarProps.value.items = fetchSidebarItems(newPath);
-});
-
 const breadCrumbs = computed(() => {
   // Logic to generate breadcrumbs based on the current route
   // Get the current route and generate breadcrumbs accordingly
