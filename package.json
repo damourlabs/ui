@@ -12,7 +12,11 @@
     "preview": "nuxt preview .playground",
     "postinstall": "nuxt prepare .playground",
     "release": "release-it",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
   },
   "devDependencies": {
     "@nuxt/eslint": "latest",
@@ -20,12 +24,14 @@
     "@nuxt/icon": "1.13.0",
     "@nuxtjs/color-mode": "3.5.2",
     "@release-it/conventional-changelog": "^10.0.1",
+    "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9.31.0",
     "nuxt": "^3.17.7",
     "release-it": "^19.0.4",
     "release-it-pnpm": "^4.6.6",
     "shadcn-nuxt": "2.2.0",
     "typescript": "^5.8.3",
+    "vitest": "^2.1.9",
     "vue": "latest"
   },
   "release-it": {
