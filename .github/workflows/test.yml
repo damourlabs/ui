@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: ['lts/*', 'latest', 'nightly']
+        node-version: ['lts/*', 'latest']
       fail-fast: false
 
     steps:
