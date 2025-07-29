@@ -153,17 +153,17 @@ function formatFieldLabel(key: string): string {
 // Helper function to calculate empty values for nested objects
 function calculateEmptyValue(schema: z.ZodObject<any, any, any>): Record<string, unknown> {
   const emptyValue: Record<string, unknown> = {};
-  
+
   for (const itemKey in schema.shape) {
     const { metadata: itemMetadata } = unwrapSchemaWithMetadata(schema.shape[itemKey]);
-    
+
     if (itemMetadata.hasDefault) {
       emptyValue[itemKey] = itemMetadata.defaultValue;
     } else {
       emptyValue[itemKey] = undefined;
     }
   }
-  
+
   return emptyValue;
 }
 
@@ -177,7 +177,7 @@ function configureResourceField(
 ): boolean {
   const resourceStoreKey = key.replace(resourceKeyPattern, '');
   const resourceField = resourceFields.find((item) => item.field === resourceStoreKey);
-  
+
   if (resourceField) {
     console.log('Resource store key is in the resourceFields array:', resourceStoreKey);
     field.as = 'resource-finder';
@@ -197,7 +197,7 @@ function processNestedSchema(
   field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>
 ): void {
   const { coreSchema: resolveFieldSchema } = unwrapSchemaWithMetadata(schema);
-  
+
   if (resolveFieldSchema instanceof z.ZodObject) {
     field.subfields = _createDynamicForm(resolveFieldSchema, options).sections;
     field.emptyValue = calculateEmptyValue(resolveFieldSchema);
@@ -218,14 +218,19 @@ const handleZodObject: FieldHandler<z.ZodObject<any, any, any>> = (fieldSchema, 
 // Field handler for ZodArray
 const handleZodArray: FieldHandler<z.ZodArray<any, any>> = (fieldSchema, field, context) => {
   field.as = 'array';
-  
-  processNestedSchema(fieldSchema.element, context.options, field);
-  
+
+  // Only try to configure as resource field for arrays of strings/UUIDs, not objects
+  const { coreSchema: innerSchema } = unwrapSchemaWithMetadata(fieldSchema.element);
+  if (innerSchema instanceof z.ZodString) {
+    // Try to configure as resource field (for arrays, remove 's' suffix)
+    configureResourceField(context.key, field, context.options.resourceFields || [], context.initialValues, /s$/);
+  } else {
+    // For arrays of objects, process the nested schema
+    processNestedSchema(fieldSchema.element, context.options, field);
+  }
+
   // Remove the final 's' from the label for arrays
   field.opts.label = field.opts.label.endsWith('s') ? field.opts.label.slice(0, -1) : field.opts.label;
-  
-  // Try to configure as resource field (for arrays, remove 's' suffix)
-  configureResourceField(context.key, field, context.options.resourceFields || [], context.initialValues, /s$/);
 };
 
 // Field handler for ZodRecord
@@ -243,7 +248,7 @@ const handleZodEnum: FieldHandler<z.ZodEnum<any>> = (fieldSchema, field, context
 // Field handler for ZodString
 const handleZodString: FieldHandler<z.ZodString> = (fieldSchema, field, context) => {
   field.inputType = 'text';
-  
+
   if (fieldSchema.isEmail) {
     field.inputType = 'email';
   } else if (fieldSchema.isURL) {
@@ -253,7 +258,7 @@ const handleZodString: FieldHandler<z.ZodString> = (fieldSchema, field, context)
     field.inputType = 'calendar-date';
   } else if (fieldSchema.isUUID) {
     field.inputType = 'uuid';
-    
+
     // Try to configure as resource field
     configureResourceField(context.key, field, context.options.resourceFields || [], context.initialValues);
   }
@@ -366,6 +371,12 @@ function _createDynamicForm(
     // Handle initial values based on metadata
     let initialValue: unknown = undefined;
 
+    // Skip ignored fields FIRST, before setting any values
+    if (fieldsToIgnore?.includes(key)) {
+      console.warn(`Field "${key}" is in the ignore list. Skipping.`);
+      continue;
+    }
+
     if (metadata.hasDefault) {
       initialValue = metadata.defaultValue;
     }
@@ -386,16 +397,6 @@ function _createDynamicForm(
     }
 
     initialValues[key] = initialValue;
-
-    // Skip ignored fields
-    if (fieldsToIgnore?.includes(key)) {
-      if (initialValues[key] === null || initialValues[key] === undefined) {
-        console.warn(`Removing initial value for ignored field "${key}".`);
-        delete initialValues[key];
-      }
-      console.warn(`Field "${key}" is in the ignore list. Skipping.`);
-      continue;
-    }
 
     // Process the field using the new modular approach
     const field = processField(key, fieldSchema, metadata, options, initialValues);
