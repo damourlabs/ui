@@ -2,6 +2,23 @@
   "name": "@damourlabs/ui",
   "type": "module",
   "version": "0.27.0",
+  "description": "A collection of reusable UI components for Nuxt applications.",
+  "author": {
+    "name": "Damour Labs",
+    "email": "contact@damourlabs.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/damourlabs/ui.git"
+  },
+  "keywords": [
+    "nuxt",
+    "ui",
+    "components",
+    "reusable",
+    "vue"
+  ],
   "main": "./nuxt.config.ts",
   "scripts": {
     "dev": "nuxi dev .playground",
