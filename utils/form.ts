@@ -3,6 +3,48 @@ import type { DynamicFormFieldProps, FormSchema } from '~ui/components/forms';
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod';
 
+export type ResourceFieldIndicator = {
+  field: string;
+  store: string;
+  displayField?: string;
+};
+
+export type FieldTypeMapping = {
+  [K in z.ZodFirstPartyTypeKind]?: {
+    as?: string;
+    inputType?: string;
+    handler?: FieldHandler<any>;
+  };
+};
+
+export type FieldHandler<T extends z.ZodType<any, any, any>> = (
+  fieldSchema: T,
+  field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>,
+  context: FieldHandlerContext
+) => void;
+
+export type FieldHandlerContext = {
+  key: string;
+  options: CreateDynamicFormOptions;
+  initialValues: Record<string, unknown>;
+  metadata: SchemaWrapperInfo;
+};
+
+export type CreateDynamicFormOptions = {
+  resourceFields?: ResourceFieldIndicator[];
+  fieldsToIgnore?: string[];
+  fieldTypeMapping?: Partial<FieldTypeMapping>;
+};
+
+export type SchemaWrapperInfo = {
+  isNullable: boolean;
+  isOptional: boolean;
+  hasDefault: boolean;
+  defaultValue?: unknown;
+  isLazy: boolean;
+  hasEffects: boolean;
+};
+
 export const isAsOfType = (as: string, type: string): boolean => {
   return as === type;
 };
@@ -40,40 +82,14 @@ export function createSelectOptionsFromEnum<T extends z.ZodEnum<[string, ...stri
   }));
 }
 
-
 const applyTypeSchemaToRules = (object: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>) => {
-
   const typedObject: DynamicFormFieldProps<RuleExpression<unknown>> = {
     ...object,
     rules: toTypedSchema(object.rules),
     subfields: object.subfields.map((subfield) => applyTypeSchemaToRules(subfield)) || []
-
   }
-
   return typedObject
 }
-
-type ResourceFieldIndicator = {
-  field: string;
-  store: string;
-  displayField?: string; // Optional display field for resource finder
-};
-
-// Create a dynamic form schema based on a Zod schema
-type CreateDynamicFormOptions = {
-  resourceFields?: ResourceFieldIndicator[];
-  fieldsToIgnore?: string[];
-};
-
-// Type to hold metadata about wrapper schemas
-type SchemaWrapperInfo = {
-  isNullable: boolean;
-  isOptional: boolean;
-  hasDefault: boolean;
-  defaultValue?: unknown;
-  isLazy: boolean;
-  hasEffects: boolean;
-};
 
 // Helper function to recursively unwrap schema and collect wrapper information
 function unwrapSchemaWithMetadata(
@@ -129,6 +145,204 @@ function unwrapSchemaWithMetadata(
   return { coreSchema: currentSchema, metadata };
 }
 
+// Helper function to format field labels
+function formatFieldLabel(key: string): string {
+  return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^\w/, c => c.toUpperCase());
+}
+
+// Helper function to calculate empty values for nested objects
+function calculateEmptyValue(schema: z.ZodObject<any, any, any>): Record<string, unknown> {
+  const emptyValue: Record<string, unknown> = {};
+  
+  for (const itemKey in schema.shape) {
+    const { metadata: itemMetadata } = unwrapSchemaWithMetadata(schema.shape[itemKey]);
+    
+    if (itemMetadata.hasDefault) {
+      emptyValue[itemKey] = itemMetadata.defaultValue;
+    } else {
+      emptyValue[itemKey] = undefined;
+    }
+  }
+  
+  return emptyValue;
+}
+
+// Helper function to detect and configure resource fields
+function configureResourceField(
+  key: string,
+  field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>,
+  resourceFields: ResourceFieldIndicator[],
+  initialValues: Record<string, unknown>,
+  resourceKeyPattern: RegExp = /Id$/
+): boolean {
+  const resourceStoreKey = key.replace(resourceKeyPattern, '');
+  const resourceField = resourceFields.find((item) => item.field === resourceStoreKey);
+  
+  if (resourceField) {
+    console.log('Resource store key is in the resourceFields array:', resourceStoreKey);
+    field.as = 'resource-finder';
+    field.resourceStore = resourceField.store;
+    field.displayField = resourceField.displayField || "id";
+    return true;
+  } else {
+    initialValues[key] = crypto.randomUUID();
+    return false;
+  }
+}
+
+// Helper function to handle nested schema processing
+function processNestedSchema(
+  schema: z.ZodType<any, any, any>,
+  options: CreateDynamicFormOptions,
+  field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>>
+): void {
+  const { coreSchema: resolveFieldSchema } = unwrapSchemaWithMetadata(schema);
+  
+  if (resolveFieldSchema instanceof z.ZodObject) {
+    field.subfields = _createDynamicForm(resolveFieldSchema, options).sections;
+    field.emptyValue = calculateEmptyValue(resolveFieldSchema);
+  } else {
+    field.subfields = [];
+    field.emptyValue = undefined;
+  }
+}
+
+// Field handler for ZodObject
+const handleZodObject: FieldHandler<z.ZodObject<any, any, any>> = (fieldSchema, field, context) => {
+  field.as = 'object';
+  const fieldObject = _createDynamicForm(fieldSchema, context.options);
+  field.subfields = fieldObject.sections;
+  context.initialValues[context.key] = fieldObject.initialValues;
+};
+
+// Field handler for ZodArray
+const handleZodArray: FieldHandler<z.ZodArray<any, any>> = (fieldSchema, field, context) => {
+  field.as = 'array';
+  
+  processNestedSchema(fieldSchema.element, context.options, field);
+  
+  // Remove the final 's' from the label for arrays
+  field.opts.label = field.opts.label.endsWith('s') ? field.opts.label.slice(0, -1) : field.opts.label;
+  
+  // Try to configure as resource field (for arrays, remove 's' suffix)
+  configureResourceField(context.key, field, context.options.resourceFields || [], context.initialValues, /s$/);
+};
+
+// Field handler for ZodRecord
+const handleZodRecord: FieldHandler<z.ZodRecord<any, any>> = (fieldSchema, field, context) => {
+  field.as = 'record';
+  processNestedSchema(fieldSchema.valueSchema, context.options, field);
+};
+
+// Field handler for ZodEnum
+const handleZodEnum: FieldHandler<z.ZodEnum<any>> = (fieldSchema, field, context) => {
+  field.as = 'select';
+  field.selectOptions = createSelectOptionsFromEnum(fieldSchema);
+};
+
+// Field handler for ZodString
+const handleZodString: FieldHandler<z.ZodString> = (fieldSchema, field, context) => {
+  field.inputType = 'text';
+  
+  if (fieldSchema.isEmail) {
+    field.inputType = 'email';
+  } else if (fieldSchema.isURL) {
+    field.inputType = 'url';
+  } else if (fieldSchema.isDate) {
+    field.as = 'calendar-date';
+    field.inputType = 'calendar-date';
+  } else if (fieldSchema.isUUID) {
+    field.inputType = 'uuid';
+    
+    // Try to configure as resource field
+    configureResourceField(context.key, field, context.options.resourceFields || [], context.initialValues);
+  }
+};
+
+// Field handler for ZodBoolean
+const handleZodBoolean: FieldHandler<z.ZodBoolean> = (fieldSchema, field, context) => {
+  field.as = 'checkbox';
+  field.inputType = 'checkbox';
+};
+
+// Field handler for ZodNumber
+const handleZodNumber: FieldHandler<z.ZodNumber> = (fieldSchema, field, context) => {
+  field.as = 'number';
+  field.inputType = 'number';
+};
+
+// Field handler for ZodDate
+const handleZodDate: FieldHandler<z.ZodDate> = (fieldSchema, field, context) => {
+  field.as = 'date';
+  field.inputType = 'date';
+};
+
+// Default field type mappings
+const DEFAULT_FIELD_TYPE_MAPPING: FieldTypeMapping = {
+  [z.ZodFirstPartyTypeKind.ZodObject]: { handler: handleZodObject },
+  [z.ZodFirstPartyTypeKind.ZodArray]: { handler: handleZodArray },
+  [z.ZodFirstPartyTypeKind.ZodRecord]: { handler: handleZodRecord },
+  [z.ZodFirstPartyTypeKind.ZodEnum]: { handler: handleZodEnum },
+  [z.ZodFirstPartyTypeKind.ZodString]: { handler: handleZodString },
+  [z.ZodFirstPartyTypeKind.ZodBoolean]: { handler: handleZodBoolean },
+  [z.ZodFirstPartyTypeKind.ZodNumber]: { handler: handleZodNumber },
+  [z.ZodFirstPartyTypeKind.ZodDate]: { handler: handleZodDate },
+};
+
+// Main field processing function
+function processField(
+  key: string,
+  fieldSchema: z.ZodType<any, any, any>,
+  metadata: SchemaWrapperInfo,
+  options: CreateDynamicFormOptions,
+  initialValues: Record<string, unknown>
+): DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>> {
+  const field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>> = {
+    as: 'input',
+    description: fieldSchema.description ?? '',
+    opts: {
+      label: formatFieldLabel(key),
+      validateOnValueUpdate: true,
+      validateOnMount: false,
+    },
+    name: key,
+    label: formatFieldLabel(key),
+    subfields: [],
+    displayField: 'id',
+    rules: fieldSchema,
+    inputType: 'text',
+  };
+
+  // Get field type mapping (merge user config with defaults)
+  const fieldTypeMapping = {
+    ...DEFAULT_FIELD_TYPE_MAPPING,
+    ...options.fieldTypeMapping,
+  };
+
+  // Get the handler for this field type
+  const typeKind = fieldSchema._def.typeName as z.ZodFirstPartyTypeKind;
+  const mapping = fieldTypeMapping[typeKind];
+
+  if (mapping) {
+    // Apply base configuration from mapping
+    if (mapping.as) field.as = mapping.as;
+    if (mapping.inputType) field.inputType = mapping.inputType;
+
+    // Apply custom handler if available
+    if (mapping.handler) {
+      const context: FieldHandlerContext = {
+        key,
+        options,
+        initialValues,
+        metadata,
+      };
+      mapping.handler(fieldSchema, field, context);
+    }
+  }
+
+  return field;
+}
+
 function _createDynamicForm(
   schema: z.ZodObject<z.ZodRawShape, z.UnknownKeysParam, z.ZodTypeAny>,
   options: CreateDynamicFormOptions = {
@@ -141,13 +355,12 @@ function _createDynamicForm(
   const initialValues: Record<string, unknown> = {};
 
   for (const key in schema.shape) {
-
-
     const originalFieldSchema = schema.shape[key];
     if (!originalFieldSchema) {
       console.warn(`Field "${key}" has no schema defined. Skipping.`);
-      continue; // Skip fields without a schema
+      continue;
     }
+
     const { coreSchema: fieldSchema, metadata } = unwrapSchemaWithMetadata(originalFieldSchema);
 
     // Handle initial values based on metadata
@@ -167,224 +380,25 @@ function _createDynamicForm(
       initialValue = null;
     }
 
-    // Special handle case for the "uuid" or "id" field of the object
-    // Since its (should) never be shown to to the user, we can set it to a random UUID
+    // Special handling for ID/UUID fields
     if (key === 'id' || key === 'uuid') {
-      initialValue = crypto.randomUUID(); // Generate a random UUID as the initial value
+      initialValue = crypto.randomUUID();
     }
 
     initialValues[key] = initialValue;
 
+    // Skip ignored fields
     if (fieldsToIgnore?.includes(key)) {
-      // If initialValues has a value for this key, we remove it
       if (initialValues[key] === null || initialValues[key] === undefined) {
-        // Remove the key from initialValues if it is in the ignore list
         console.warn(`Removing initial value for ignored field "${key}".`);
         delete initialValues[key];
       }
-
       console.warn(`Field "${key}" is in the ignore list. Skipping.`);
-      continue; // Skip this field if it is in the ignore list
-    };
-
-    const field: DynamicFormFieldProps<z.ZodType<unknown, z.ZodTypeDef, unknown>> = {
-      as: 'input',
-      description: fieldSchema.description ?? '',
-      opts: {
-        label: key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^\w/, c => c.toUpperCase()),
-        validateOnValueUpdate: true,
-        validateOnMount: false,
-      },
-      name: key,
-      label: key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^\w/, c => c.toUpperCase()),
-      subfields: [],
-      displayField: 'id',
-      rules: fieldSchema,
-      inputType: 'text',
-    };
-
-
-
-
-    // Handle nested objects
-    if (fieldSchema instanceof z.ZodObject) {
-      // If the field is an object, we can use the inner schema for the object properties
-      field.as = 'object'; // Change the field type to object
-
-      const fieldObject = _createDynamicForm(fieldSchema, options); // Recursively create fields for the object properties
-      field.subfields = fieldObject.sections; // Set the children to the created fields
-      initialValues[key] = fieldObject.initialValues; // Set the initial value for the object
+      continue;
     }
 
-
-
-
-
-
-
-    // --- Deal with arrays ---
-    if (fieldSchema instanceof z.ZodArray) {
-      // If the field is an array, we can use the inner schema for the array items
-      field.as = 'array'; // Change the field type to array
-
-      // Use our new unwrapping function for the array element
-      const { coreSchema: resolveFieldSchema } = unwrapSchemaWithMetadata(fieldSchema.element);
-
-      // Only process as nested fields if the core schema is a ZodObject
-      if (resolveFieldSchema instanceof z.ZodObject) {
-        field.subfields = _createDynamicForm(resolveFieldSchema, options).sections; // Recursively create fields for the array items
-
-        // For the empty value field, we need to find what are the default values of all the fields in the resolveFieldSchema
-        field.emptyValue = {};
-
-        for (const itemKey in resolveFieldSchema.shape) {
-          const { metadata: itemMetadata } = unwrapSchemaWithMetadata(resolveFieldSchema.shape[itemKey]);
-
-          if (itemMetadata.hasDefault) {
-            field.emptyValue[itemKey] = itemMetadata.defaultValue;
-          } else {
-            field.emptyValue[itemKey] = undefined; // Default to undefined if no default value is available
-          }
-        }
-      } else {
-        // For non-object array elements, set empty subfields and emptyValue
-        field.subfields = [];
-        field.emptyValue = undefined;
-      }
-
-      // Set the label to be without the final 's'
-      field.opts.label = field.opts.label.endsWith('s') ? field.opts.label.slice(0, -1) : field.opts.label; // Remove the final 's' from the label
-
-      // Get the resource store key from the key since we assume that the key is in the form '[resource]Id'
-      const resourceStoreKey = key.replace(/s$/, ''); // Remove the 'Id' suffix and add 's' to get the store key
-
-      // Check if any items in the resource field arrays obj match the resourceStoreKey
-      const resourceField = resourceFields.find((item) => item.field === resourceStoreKey);
-      if (resourceField) {
-        console.log('Resource store key is in the resourceFields array:', resourceStoreKey);
-
-        field.as = 'resource-finder';
-        field.resourceStore = resourceField.store; // Set the resource store key
-        field.displayField = resourceField.displayField || "id"
-      } else {
-
-        initialValues[key] = crypto.randomUUID(); // Generate a random UUID as the initial value
-        // field.as = 'generate-uuid'; // Change the field type to generate-uuid
-      }
-
-      // console.log('Field schema for array:', fieldSchema);
-    }
-
-    // --- Deal with Records ---
-    if (fieldSchema instanceof z.ZodRecord) {
-      // If the field is a record, we can use the inner schema for the record values
-      field.as = 'record'; // Change the field type to record
-
-      // Use our new unwrapping function for the record value schema
-      const { coreSchema: resolveFieldSchema } = unwrapSchemaWithMetadata(fieldSchema.valueSchema);
-
-      // Only process as nested fields if the core schema is a ZodObject
-      if (resolveFieldSchema instanceof z.ZodObject) {
-        field.subfields = _createDynamicForm(resolveFieldSchema, options).sections; // Recursively create fields for the record values
-
-        // For the empty value field, we need to find what are the default values of all the fields in the resolveFieldSchema
-        field.emptyValue = {};
-
-        for (const itemKey in resolveFieldSchema.shape) {
-          const { metadata: itemMetadata } = unwrapSchemaWithMetadata(resolveFieldSchema.shape[itemKey]);
-
-          if (itemMetadata.hasDefault) {
-            field.emptyValue[itemKey] = itemMetadata.defaultValue;
-          } else {
-            field.emptyValue[itemKey] = undefined; // Default to undefined if no default value is available
-          }
-        }
-      } else {
-        // For non-object record values, set empty subfields and emptyValue
-        field.subfields = [];
-        field.emptyValue = undefined; // Default to undefined if no default value is available
-      }
-    }
-
-    // --- Deal with enums ---
-    if (fieldSchema instanceof z.ZodEnum) {
-      // If the field is an enum, we can create select options
-      field.as = 'select'; // Change the field type to select
-      field.selectOptions = createSelectOptionsFromEnum(fieldSchema);
-    }
-
-
-    // --- Deal with strings ---
-    if (fieldSchema instanceof z.ZodString) {
-      // If the field is a string, we can set the type to text
-      field.inputType = 'text';
-    }
-    if (fieldSchema instanceof z.ZodString && fieldSchema.isEmail) {
-      // If the field is a string and is an email, we can set the type to email
-      field.inputType = 'email';
-    }
-    if (fieldSchema instanceof z.ZodString && fieldSchema.isURL) {
-      // If the field is a string and is a URL, we can set the type to url
-      field.inputType = 'url';
-    }
-    if (fieldSchema instanceof z.ZodString && fieldSchema.isDate) {
-      // If the field is a string and is a date, we can set the type to calendar-date
-      field.as = 'calendar-date'; // Change the field type to calendar-date
-      field.inputType = 'calendar-date'; // Set the type to calendar-date
-    }
-    if (fieldSchema instanceof z.ZodString && fieldSchema.isUUID) {
-      // If the field is a string and is a date, we can set the type to date
-      field.inputType = 'uuid'; // Set the type to uuid
-
-      // Get the resource store key from the key since we assume that the key is in the form '[resource]Id'
-      const resourceStoreKey = key.replace(/Id$/, ''); // Remove the 'Id' suffix and add 's' to get the store key
-
-
-      // Check if any items in the resource field arrays obj match the resourceStoreKey
-      const resourceField = resourceFields.find((item) => item.field === resourceStoreKey);
-      if (resourceField) {
-        console.log('Resource store key is in the resourceFields array:', resourceStoreKey);
-
-        field.as = 'resource-finder';
-        field.resourceStore = resourceField.store; // Set the resource store key
-        field.displayField = resourceField.displayField || "id"
-      } else {
-
-        initialValues[key] = crypto.randomUUID(); // Generate a random UUID as the initial value
-        // field.as = 'generate-uuid'; // Change the field type to generate-uuid
-      }
-    }
-
-    // --- Deal with booleans ---
-    if (fieldSchema instanceof z.ZodBoolean) {
-      // If the field is a boolean, we can set the type to checkbox
-      field.as = 'checkbox'; // Change the field type to checkbox
-      field.inputType = 'checkbox'; // Set the type to checkbox
-    }
-
-
-    // --- Deal with numbers ---
-    //
-    if (fieldSchema instanceof z.ZodNumber) {
-      // If the field is a number, we can set the type to number
-      field.as = 'number';
-      field.inputType = 'number'; // Set the type to number
-
-    }
-
-    // --- Deal with date
-    if (fieldSchema instanceof z.ZodDate) {
-      // If the field is a date, we can set the type to date
-      field.as = 'date'; // Change the field type to date
-      field.inputType = 'date'; // Set the type to date
-    }
-
-
-
-
-
-
-
+    // Process the field using the new modular approach
+    const field = processField(key, fieldSchema, metadata, options, initialValues);
     fields.push(field);
   }
 
@@ -393,7 +407,6 @@ function _createDynamicForm(
     schema: schema,
     initialValues
   };
-
 }
 
 
@@ -447,4 +460,30 @@ export function createResourceFinderField<TRules>(
     searchFields: options.searchFields || ['name', 'title']
   }
 }
+
+// Helper function to create custom field handlers
+export function createFieldHandler<T extends z.ZodType<any, any, any>>(
+  handler: FieldHandler<T>
+): FieldHandler<T> {
+  return handler;
+}
+
+// Helper function to create custom field type mappings
+export function createFieldTypeMapping(mapping: Partial<FieldTypeMapping>): Partial<FieldTypeMapping> {
+  return mapping;
+}
+
+// Helper function to extend existing field type mappings
+export function extendFieldTypeMapping(
+  base: Partial<FieldTypeMapping>,
+  extension: Partial<FieldTypeMapping>
+): Partial<FieldTypeMapping> {
+  return { ...base, ...extension };
+}
+
+// Export the default field type mapping for reference and extension
+export const DEFAULT_FIELD_TYPE_MAPPING_EXPORT = DEFAULT_FIELD_TYPE_MAPPING;
+
+// Export utility functions
+export { formatFieldLabel, calculateEmptyValue, configureResourceField, processNestedSchema, unwrapSchemaWithMetadata };
 
