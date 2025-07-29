@@ -61,7 +61,6 @@ jobs:
       uses: codecov/codecov-action@v4
       if: matrix.node-version == 'lts/*'
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
