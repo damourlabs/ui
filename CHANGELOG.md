@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.27.0
+
+### &nbsp;&nbsp;&nbsp;Features
+
+- Add GitHub Actions workflow for testing and coverage &nbsp;-&nbsp; by **Christopher** [<samp>(49093)</samp>](https://github.com/damourlabs/ui/commit/490930e)
+- Update GitHub Actions workflow for improved testing and coverage &nbsp;-&nbsp; by **Christopher** [<samp>(b46a7)</samp>](https://github.com/damourlabs/ui/commit/b46a76a)
+- **utils/form**: Modularize dynamic form processing and enhance field handling &nbsp;-&nbsp; by **Christopher** [<samp>(6f330)</samp>](https://github.com/damourlabs/ui/commit/6f330c4)
+
+### &nbsp;&nbsp;&nbsp;Bug Fixes
+
+- Remove nighlty version &nbsp;-&nbsp; by **Christopher** [<samp>(cf7b5)</samp>](https://github.com/damourlabs/ui/commit/cf7b53d)
+- Remove CODECOV_TOKEN from workflow for security &nbsp;-&nbsp; by **Christopher** [<samp>(5d26e)</samp>](https://github.com/damourlabs/ui/commit/5d26ed8)
+- Add reports directory to vitest config file &nbsp;-&nbsp; by **Christopher** [<samp>(962ce)</samp>](https://github.com/damourlabs/ui/commit/962cef8)
+- **ci**:
+  - Remove linting &nbsp;-&nbsp; by **Christopher** [<samp>(5e0ad)</samp>](https://github.com/damourlabs/ui/commit/5e0ad04)
+- **components/forms**:
+  - Use getId function for resource identification in ResourceFinder &nbsp;-&nbsp; by **Christopher** [<samp>(1b79b)</samp>](https://github.com/damourlabs/ui/commit/1b79b50)
+- **utils/form**:
+  - Set default displayField to "id" for resource finder fields &nbsp;-&nbsp; by **Christopher** [<samp>(3ba88)</samp>](https://github.com/damourlabs/ui/commit/3ba88f8)
+  - Improve handling of ignored fields in dynamic form initialization &nbsp;-&nbsp; by **Christopher** [<samp>(87301)</samp>](https://github.com/damourlabs/ui/commit/87301a3)
+  - Update initialValues handling for ignored fields in dynamic form &nbsp;-&nbsp; by **Christopher** [<samp>(eb6ba)</samp>](https://github.com/damourlabs/ui/commit/eb6ba01)
+
+##### &nbsp;&nbsp;&nbsp;&nbsp;[View changes on GitHub](https://github.com/damourlabs/ui/compare/v0.26.4...0.27.0)
+
 ## 0.26.4
 
 ### &nbsp;&nbsp;&nbsp;Bug Fixes
