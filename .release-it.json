@@ -1,9 +1,5 @@
 {
   "plugins": {
-    "release-it-pnpm": {
-      "inFile": "CHANGELOG.md",
-      "publishCommand": " echo 'Skipping npm publish'"
-    },
     "@release-it/conventional-changelog": {
       "infile": "",
       "preset": {
@@ -66,6 +62,6 @@
     ]
   },
   "npm": {
-    "publish": false
+    "publish": true
   }
 }
